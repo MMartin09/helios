@@ -1,0 +1,10 @@
+
+## Editors
+
+# IntelliJ and PyCharm
+.idea
+
+## Python
+
+# Byte-compiled / optimized / DLL files
+__pycache__/

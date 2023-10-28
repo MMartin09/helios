@@ -1,0 +1,30 @@
+version: "3.9"
+
+services:
+
+  mariadb:
+    image: mariadb
+    restart: always
+    ports:
+      - "3306:3306"
+    volumes:
+      - mariadb-data:/var/lib/mysql
+    environment:
+      MARIADB_USER: helios
+      MARIADB_PASSWORD: Helios_2001!
+      MARIADB_ROOT_PASSWORD: Helios_2001!
+      MARIADB_DATABASE: helios
+
+  phpmyadmin:
+    depends_on:
+      - mariadb
+    image: phpmyadmin/phpmyadmin
+    restart: always
+    ports:
+      - 8088:80
+    environment:
+      PMA_HOST: mariadb
+      MARIADB_ROOT_PASSWORD: Helios_2001!
+
+volumes:
+  mariadb-data:
