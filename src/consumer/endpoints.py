@@ -9,7 +9,7 @@ from src.consumer.models import (
     ConsumerOut_Pydantic,
 )
 
-router = APIRouter()
+router = APIRouter(tags=["consumer"])
 
 
 @router.get("/", response_model=List[ConsumerOut_Pydantic])
