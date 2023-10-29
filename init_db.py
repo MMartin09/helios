@@ -40,7 +40,9 @@ async def main():
         consumer=heating_rod,
     )
 
-    _ = await ConsumerState.create(consumer=heating_rod)
+    _ = await ConsumerState.create(
+        consumer=heating_rod, mode=ConsumerMode.AUTOMATIC, status=ConsumerStatus.RUNNING
+    )
 
     consumer_1 = await Consumer.create(name="1111")
     consumer_2 = await Consumer.create(name="2222", priority=2)
@@ -63,9 +65,11 @@ async def main():
         consumer=consumer_3,
     )
 
-    await ConsumerState.create(consumer=consumer_1)
-    await ConsumerState.create(consumer=consumer_2)
-    await ConsumerState.create(consumer=consumer_3)
+    await ConsumerState.create(
+        consumer=consumer_1, mode=ConsumerMode.AUTOMATIC, status=ConsumerStatus.RUNNING
+    )
+    await ConsumerState.create(consumer=consumer_2, mode=ConsumerMode.AUTOMATIC)
+    await ConsumerState.create(consumer=consumer_3, mode=ConsumerMode.AUTOMATIC)
 
 
 async def query_sample():

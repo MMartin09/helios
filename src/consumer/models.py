@@ -15,10 +15,12 @@ class Consumer(Model):
 
     components: fields.ReverseRelation["ConsumerComponent"]
     state: fields.OneToOneRelation["ConsumerState"]
+    runtimes: fields.ReverseRelation["ConsumerRuntime"]
 
 
 class ConsumerComponent(Model):
     id = fields.IntField(pk=True)
+
     name = fields.CharField(max_length=32)
 
     consumption = fields.SmallIntField(description="Consumption of the component [W]")
@@ -35,6 +37,9 @@ class ConsumerComponent(Model):
         "models.Consumer", related_name="components", on_delete=fields.OnDelete.CASCADE
     )
 
+    class Meta:
+        table = "consumer_component"
+
 
 class ConsumerState(Model):
     id = fields.IntField(pk=True)
@@ -50,6 +55,23 @@ class ConsumerState(Model):
     consumer: fields.OneToOneRelation["Consumer"] = fields.OneToOneField(
         "models.Consumer", related_name="state", on_delete=fields.OnDelete.CASCADE
     )
+
+    class Meta:
+        table = "consumer_state"
+
+
+class ConsumerRuntime(Model):
+    id = fields.IntField(pk=True)
+
+    date = fields.DateField()
+    runtime = fields.SmallIntField()
+
+    consumer: fields.ForeignKeyRelation["Consumer"] = fields.ForeignKeyField(
+        "models.Consumer", related_name="runtimes", on_delete=fields.OnDelete.CASCADE
+    )
+
+    class Meta:
+        table = "consumer_runtime"
 
 
 Consumer_Pydantic = pydantic_model_creator(Consumer, name="Consumer")
