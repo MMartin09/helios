@@ -12,3 +12,9 @@ class ConsumerMode(str, Enum):
     AUTOMATIC = "AUTOMATIC"
     HAND_ON = "HAND_ON"
     HAND_OFF = "HAND_OFF"
+
+
+class GridMode(str, Enum):
+    NOT_SET = "NOT_SET"
+    FEED_IN = "FEED_IN"
+    CONSUME = "CONSUME"
