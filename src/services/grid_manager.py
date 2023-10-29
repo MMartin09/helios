@@ -1,8 +1,6 @@
 from datetime import datetime, timedelta
 from typing import List
 
-from loguru import logger
-
 from src.core.definitions import GridMode
 
 
@@ -21,14 +19,14 @@ class GridManagerService:
         self._grid_values: List = []
         self._grid_mode: GridMode = GridMode.NOT_SET
 
-    def update(self, p_grid: float) -> GridMode | None:
+    def update(self, p_grid: float) -> GridMode:
         """Update the service with a new grid value.
 
         Args:
             p_grid: Current grid value.
 
         Returns:
-            The new GridMode if it has changed, otherwise None.
+            The current GridMode.
         """
 
         now = datetime.now()
@@ -36,14 +34,9 @@ class GridManagerService:
         self._prune_old_grid_values(now)
 
         sma = self._calc_sma()
+        self._grid_mode = self._determine_grid_mode(grid_value=sma)
 
-        # Check if the GridMode has changed
-        if (grid_mode := self._determine_grid_mode(grid_value=sma)) != self._grid_mode:
-            logger.info(f"Switching GridMode from {self._grid_mode} to {grid_mode}")
-            self._grid_mode = grid_mode
-            return self._grid_mode
-
-        return None
+        return self._grid_mode
 
     def get_current_grid_mode(self) -> GridMode:
         """Return the current GridMode.

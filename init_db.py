@@ -1,12 +1,15 @@
 import asyncio
 
 from tortoise import Tortoise
+from tortoise.expressions import Q
+from tortoise.query_utils import Prefetch
 
 from src.consumer.models import (
     Consumer,
     ConsumerComponent,
     ConsumerState,
 )
+from src.core.definitions import ConsumerMode, ConsumerStatus
 from src.core.settings.app import get_app_settings
 
 
@@ -20,7 +23,7 @@ async def main():
     await Tortoise.init(db_url=app_settings.MARIA_DB.URI, modules={"models": models})
     await Tortoise.generate_schemas()
 
-    heating_rod = await Consumer.create(id="4855199C3C38", name="Heating-Rod")
+    heating_rod = await Consumer.create(name="Heating-Rod", priority=1)
 
     _ = await ConsumerComponent.create(
         name="Component_1",
@@ -39,6 +42,53 @@ async def main():
 
     _ = await ConsumerState.create(consumer=heating_rod)
 
+    consumer_1 = await Consumer.create(name="1111")
+    consumer_2 = await Consumer.create(name="2222", priority=2)
+    consumer_3 = await Consumer.create(name="3333", priority=3)
+
+    await ConsumerComponent.create(
+        name="1111_component1", consumption=800, ip="...", relais=0, consumer=consumer_1
+    )
+    await ConsumerComponent.create(
+        name="2222_component1", consumption=600, ip="...", relais=0, consumer=consumer_2
+    )
+    await ConsumerComponent.create(
+        name="2222_component2", consumption=600, ip="...", relais=1, consumer=consumer_2
+    )
+    await ConsumerComponent.create(
+        name="3333_component1",
+        consumption=1000,
+        ip="...",
+        relais=0,
+        consumer=consumer_3,
+    )
+
+    await ConsumerState.create(consumer=consumer_1)
+    await ConsumerState.create(consumer=consumer_2)
+    await ConsumerState.create(consumer=consumer_3)
+
+
+async def query_sample():
+    models = [
+        "src.consumer.models",
+    ]
+    app_settings = get_app_settings()
+
+    Tortoise.init_models(models, "models")
+    await Tortoise.init(db_url=app_settings.MARIA_DB.URI, modules={"models": models})
+
+    consumers = await Consumer.all().prefetch_related(
+        Prefetch(
+            "state",
+            queryset=ConsumerState.filter(
+                Q(mode=ConsumerMode.AUTOMATIC) & ~Q(status=ConsumerStatus.RUNNING)
+            ),
+        )
+    )
+    for consumer in consumers:
+        print(consumer.name)
+
 
 if __name__ == "__main__":
     asyncio.run(main())
+    # asyncio.run(query_sample())

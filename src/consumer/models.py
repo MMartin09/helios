@@ -5,8 +5,10 @@ from src.core.definitions import ConsumerMode, ConsumerStatus
 
 
 class Consumer(Model):
-    id = fields.CharField(max_length=64, pk=True)
+    id = fields.IntField(max_length=64, pk=True)
+
     name = fields.CharField(max_length=256, unique=True, index=True)
+    priority = fields.IntField(default=0, unique=True)
 
     minimum_uninterrupted_runtime = fields.SmallIntField(default=0)
     maximum_runtime_per_day = fields.SmallIntField(default=0)
