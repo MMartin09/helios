@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from starlette.responses import RedirectResponse
+from tortoise import Tortoise
 from tortoise.contrib.fastapi import register_tortoise
 
 from src.core.api_router import api_router
@@ -27,11 +28,12 @@ def get_app() -> FastAPI:
         "src.consumer.models",
     ]
 
+    Tortoise.init_models(models, "models")
     register_tortoise(
         app,
         db_url=app_settings.MARIA_DB.URI,
         modules={"models": models},
-        generate_schemas=True,
+        generate_schemas=False,
         add_exception_handlers=True,
     )
 
