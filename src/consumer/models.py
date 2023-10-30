@@ -1,7 +1,7 @@
 from tortoise import Model, fields
 from tortoise.contrib.pydantic import pydantic_model_creator
 
-from src.core.definitions import ConsumerMode, ConsumerStatus
+from src.core.definitions import ConsumerMode, ConsumerStatus, ConsumerType
 
 
 class Consumer(Model):
@@ -16,6 +16,12 @@ class Consumer(Model):
     components: fields.ReverseRelation["ConsumerComponent"]
     state: fields.OneToOneRelation["ConsumerState"]
     runtimes: fields.ReverseRelation["ConsumerRuntime"]
+
+    def consumer_type(self) -> ConsumerType:
+        return ConsumerType.SCC if len(self.components) == 1 else ConsumerType.MCC
+
+    class Meta:
+        computed = ["consumer_type"]
 
 
 class ConsumerComponent(Model):

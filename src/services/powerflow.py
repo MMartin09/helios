@@ -58,9 +58,8 @@ class StopConsumerService:
             )
 
             await self._stop_component(target_component)
-            # await consumer_state.update(
-            #    status=ConsumerStatus.STOPPED
-            # )
+
+            # TODO: Same code below
             consumer_state.status = ConsumerStatus.STOPPED
             await consumer_state.save()
         else:  # MCC
@@ -76,11 +75,9 @@ class StopConsumerService:
             )
 
             await self._stop_component(target_component)
+
             consumer_state.status = new_mode
             await consumer_state.save()
-            # await consumer_state.update(
-            #    status=new_mode
-            # )
 
     async def _get_running_consumers(self) -> List[Consumer]:
         return await Consumer.filter(

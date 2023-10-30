@@ -1,6 +1,11 @@
 from enum import Enum
 
 
+class ConsumerType(str, Enum):
+    SCC = "SCC"
+    MCC = "MCC"
+
+
 class ConsumerStatus(str, Enum):
     STOPPED = "STOPPED"
     PARTIAL_RUNNING = "PARTIAL_RUNNING"
