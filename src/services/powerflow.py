@@ -1,5 +1,6 @@
 from typing import List
 
+import httpx
 from loguru import logger
 from tortoise.expressions import Q
 
@@ -31,17 +32,77 @@ class StopConsumerService:
 
     async def get_next_consumer(self) -> None:
         consumers = await self._get_running_consumers()
-        if consumers:
+        if not consumers:
             logger.debug("No consumer left to stop")
             return
 
+        # TODO: If the rules are implemented to check if a consumer can be stopped iterate over the consumers
+        target_consumer = consumers[0]
+
         logger.debug(f"Found {len(consumers)} running consumers in automatic mode!")
+        logger.debug(f"Target consumer: {target_consumer.id} ({target_consumer.name}")
+
+        # Query all components of the consumer and sort them descending by the consumption
+        components = await target_consumer.components.all().order_by("-consumption")
+        # Filter out only the running components
+        running_components = [
+            component for component in components if component.running
+        ]
+        # Target component is the running component with the highest consumption (or the only one if it is an SCC)
+        target_component = running_components[0]
+
+        consumer_state = await target_consumer.state.first()
+        if len(components) == 1:  # SCC
+            logger.debug(
+                f"Stopping component {target_component.id} ({target_component.name}) consumption={target_component.consumption}! Switching consumer from {ConsumerStatus.RUNNING} to {ConsumerStatus.STOPPED}"
+            )
+
+            await self._stop_component(target_component)
+            # await consumer_state.update(
+            #    status=ConsumerStatus.STOPPED
+            # )
+            consumer_state.status = ConsumerStatus.STOPPED
+            await consumer_state.save()
+        else:  # MCC
+            current_mode = consumer_state.status
+            new_mode = (
+                ConsumerStatus.PARTIAL_RUNNING
+                if len(running_components) > 1
+                else ConsumerStatus.STOPPED
+            )
+
+            logger.debug(
+                f"Stopping component {target_component.id} ({target_component.name}) consumption={target_component.consumption}! Switching consumer from {current_mode} to {new_mode}"
+            )
+
+            await self._stop_component(target_component)
+            consumer_state.status = new_mode
+            await consumer_state.save()
+            # await consumer_state.update(
+            #    status=new_mode
+            # )
 
     async def _get_running_consumers(self) -> List[Consumer]:
         return await Consumer.filter(
             Q(state__mode=ConsumerMode.AUTOMATIC)
-            & ~Q(state__status=ConsumerStatus.RUNNING)
+            & ~Q(state__status=ConsumerStatus.STOPPED)
         ).order_by("-priority")
+
+    async def _stop_component(self, component) -> None:
+        component.running = False
+        await component.save()
+
+        payload = {"id": component.relais, "on": False}
+        url = f"http://{component.ip}/rpc/Switch.Set"
+        try:
+            response = httpx.get(url, params=payload)
+            response.raise_for_status()
+
+            return response.json()
+
+        except httpx.HTTPError as exc:
+            print(f"Error while turning off Shelly: {exc}")
+            return None
 
 
 class PowerflowService:

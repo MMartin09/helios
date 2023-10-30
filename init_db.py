@@ -28,14 +28,14 @@ async def main():
     _ = await ConsumerComponent.create(
         name="Component_1",
         consumption=500,
-        ip="192.168.0.154",
+        ip="192.168.0.103",
         relais=0,
         consumer=heating_rod,
     )
     _ = await ConsumerComponent.create(
         name="Component_2",
         consumption=1000,
-        ip="192.168.0.154",
+        ip="192.168.0.103",
         relais=1,
         consumer=heating_rod,
     )
@@ -44,32 +44,35 @@ async def main():
         consumer=heating_rod, mode=ConsumerMode.AUTOMATIC, status=ConsumerStatus.RUNNING
     )
 
-    consumer_1 = await Consumer.create(name="1111")
-    consumer_2 = await Consumer.create(name="2222", priority=2)
-    consumer_3 = await Consumer.create(name="3333", priority=3)
+    # consumer_1 = await Consumer.create(name="1111")
+    # consumer_2 = await Consumer.create(name="2222", priority=2)
+    # consumer_3 = await Consumer.create(name="3333", priority=3)
 
-    await ConsumerComponent.create(
-        name="1111_component1", consumption=800, ip="...", relais=0, consumer=consumer_1
-    )
-    await ConsumerComponent.create(
-        name="2222_component1", consumption=600, ip="...", relais=0, consumer=consumer_2
-    )
-    await ConsumerComponent.create(
-        name="2222_component2", consumption=600, ip="...", relais=1, consumer=consumer_2
-    )
-    await ConsumerComponent.create(
-        name="3333_component1",
-        consumption=1000,
-        ip="...",
-        relais=0,
-        consumer=consumer_3,
-    )
+    # await ConsumerComponent.create(
+    #    name="1111_component1", consumption=800, ip="...", relais=0, consumer=consumer_1, running=True
+    # )
+    # await ConsumerComponent.create(
+    #    name="2222_component1", consumption=600, ip="...", relais=0, consumer=consumer_2
+    # )
+    # await ConsumerComponent.create(
+    #    name="2222_component2", consumption=800, ip="...", relais=1, consumer=consumer_2, running=True
+    # )
+    # await ConsumerComponent.create(
+    #    name="2222_component3", consumption=700, ip="...", relais=1, consumer=consumer_2, running=True
+    # )
+    # await ConsumerComponent.create(
+    #    name="3333_component1",
+    #    consumption=1000,
+    #    ip="...",
+    #    relais=0,
+    #    consumer=consumer_3,
+    # )
 
-    await ConsumerState.create(
-        consumer=consumer_1, mode=ConsumerMode.AUTOMATIC, status=ConsumerStatus.RUNNING
-    )
-    await ConsumerState.create(consumer=consumer_2, mode=ConsumerMode.AUTOMATIC)
-    await ConsumerState.create(consumer=consumer_3, mode=ConsumerMode.AUTOMATIC)
+    # await ConsumerState.create(
+    #    consumer=consumer_1, mode=ConsumerMode.AUTOMATIC, status=ConsumerStatus.RUNNING
+    # )
+    # await ConsumerState.create(consumer=consumer_2, mode=ConsumerMode.AUTOMATIC, status=ConsumerStatus.PARTIAL_RUNNING)
+    # await ConsumerState.create(consumer=consumer_3, mode=ConsumerMode.AUTOMATIC)
 
 
 async def query_sample():
