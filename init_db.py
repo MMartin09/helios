@@ -1,4 +1,5 @@
 import asyncio
+from itertools import combinations
 
 from tortoise import Tortoise
 from tortoise.expressions import Q
@@ -22,6 +23,39 @@ async def main():
 
     await Tortoise.init(db_url=app_settings.MARIA_DB.URI, modules={"models": models})
     await Tortoise.generate_schemas()
+
+    await Consumer.all().prefetch_related("components")
+    consumer = (
+        await Consumer.filter(name="Heating-Rod").prefetch_related("components").first()
+    )
+    print(consumer.consumer_type())
+    return
+    # consumer_state = await consumer.state.first()
+    # print(consumer_state.current_consumption)
+
+    virtual_surplus = 800
+
+    components = await consumer.components.all()
+
+    best_surplus = float("inf")
+    best_combination = None
+
+    for r in range(1, len(components) + 1):
+        for component_combination in combinations(components, r):
+            print(list(component_combination))
+            combination_consumption = sum(
+                component.consumption for component in component_combination
+            )
+            new_surplus = virtual_surplus - combination_consumption
+            print(component_combination, combination_consumption, new_surplus)
+
+            if -250 <= new_surplus < best_surplus:
+                best_surplus = new_surplus
+                best_combination = component_combination
+
+    print(f"BEST COMBINATION {best_combination}! NEW SURPLUS WILL BE: {best_surplus}")
+
+    return
 
     heating_rod = await Consumer.create(name="Heating-Rod", priority=1)
 

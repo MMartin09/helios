@@ -57,6 +57,10 @@ class ConsumerState(Model):
         ConsumerStatus, max_length=16, default=ConsumerStatus.STOPPED
     )
     started_at = fields.DatetimeField(auto_now_add=True)
+    current_consumption = fields.SmallIntField(
+        default=0,
+        description="Current total consumer consumption. Important for MCCs. ",
+    )
 
     consumer: fields.OneToOneRelation["Consumer"] = fields.OneToOneField(
         "models.Consumer", related_name="state", on_delete=fields.OnDelete.CASCADE

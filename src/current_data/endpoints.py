@@ -16,7 +16,8 @@ async def powerflow(request: Request) -> Any:
     current_data = FroniusDataParser().parse_powerflow(request_data)
     logger.info(f"Current Powerflow data: {current_data.model_dump()}")
 
-    await powerflow_service.update(current_data.p_grid)
+    # await powerflow_service.update(current_data.p_grid)
+    await powerflow_service.update(-600)
 
     return {"status": "ok"}
 

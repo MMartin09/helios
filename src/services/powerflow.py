@@ -1,11 +1,12 @@
+from itertools import combinations
 from typing import List
 
 import httpx
 from loguru import logger
 from tortoise.expressions import Q
 
-from src.consumer.models import Consumer
-from src.core.definitions import ConsumerMode, ConsumerStatus, GridMode
+from src.consumer.models import Consumer, ConsumerComponent
+from src.core.definitions import ConsumerMode, ConsumerStatus, ConsumerType, GridMode
 from src.services.grid_manager import grid_manager_service
 
 
@@ -13,17 +14,71 @@ class StartConsumerService:
     def __init__(self) -> None:
         ...
 
-    async def get_next_consumer(self) -> None:
+    async def get_next_consumer(self, surplus: float) -> None:
         consumers = await self._get_stopped_consumers()
         if not consumers:
             logger.debug("No consumer left to start")
             return
 
+        # TODO: If the rules are implemented to check if a consumer can be started iterate over the consumers
+        target_consumer = consumers[0]
+
+        if target_consumer.consumer_type() == ConsumerType.SCC:
+            ...
+        elif target_consumer.consumer_type() == ConsumerType.MCC:
+            consumer_state = await target_consumer.state.first()
+            components = await target_consumer.components.all()
+
+            virtual_surplus = surplus + consumer_state.current_consumption
+
+            best_combination = await self._get_best_combination(
+                components, virtual_surplus
+            )
+            running_components = [
+                component for component in components if component.running
+            ]
+
+            best_combination_set = set(best_combination)
+            running_components_set = set(running_components)
+
+            components_to_start = list(best_combination_set - running_components_set)
+            components_to_stop = list(running_components_set - best_combination_set)
+
+            logger.debug(
+                f"Target Consumer {target_consumer.name}: Best Combination: {best_combination}; To Start: {components_to_start}; To Stop: {components_to_stop}"
+            )
+            logger.debug(f"Currently running components: {running_components}")
+
     async def _get_stopped_consumers(self) -> List[Consumer]:
-        return await Consumer.filter(
-            Q(state__mode=ConsumerMode.AUTOMATIC)
-            & ~Q(state__status=ConsumerStatus.RUNNING)
-        ).order_by("-priority")
+        return (
+            await Consumer.filter(
+                Q(state__mode=ConsumerMode.AUTOMATIC)
+                & ~Q(state__status=ConsumerStatus.RUNNING)
+            )
+            .order_by("-priority")
+            .prefetch_related("components")
+        )
+
+    async def _get_best_combination(
+        self, components: List[ConsumerComponent], current_surplus: float
+    ) -> List[ConsumerComponent]:
+        best = {
+            "surplus": float("inf"),
+            "combination": None,
+        }
+
+        for r in range(1, len(components) + 1):
+            for combination in combinations(components, r):
+                combination_consumption = sum(
+                    component.consumption for component in combination
+                )
+                new_surplus = current_surplus - combination_consumption
+
+                if 0 <= new_surplus < best["surplus"]:
+                    best["surplus"] = new_surplus
+                    best["combination"] = combination
+
+        return best["combination"]
 
 
 class StopConsumerService:
@@ -52,7 +107,8 @@ class StopConsumerService:
         target_component = running_components[0]
 
         consumer_state = await target_consumer.state.first()
-        if len(components) == 1:  # SCC
+
+        if target_consumer.consumer_type == ConsumerType.SCC:
             logger.debug(
                 f"Stopping component {target_component.id} ({target_component.name}) consumption={target_component.consumption}! Switching consumer from {ConsumerStatus.RUNNING} to {ConsumerStatus.STOPPED}"
             )
@@ -62,7 +118,7 @@ class StopConsumerService:
             # TODO: Same code below
             consumer_state.status = ConsumerStatus.STOPPED
             await consumer_state.save()
-        else:  # MCC
+        elif target_consumer.consumer_type == ConsumerType.MCC:
             current_mode = consumer_state.status
             new_mode = (
                 ConsumerStatus.PARTIAL_RUNNING
@@ -122,20 +178,7 @@ class PowerflowService:
         self._update_grid_mode(p_grid)
 
         if self._grid_mode == GridMode.FEED_IN:
-            consumers = await Consumer.filter(
-                Q(state__mode=ConsumerMode.AUTOMATIC)
-                & ~Q(state__status=ConsumerStatus.RUNNING)
-            ).order_by("-priority")
-            # logger.debug(f"Stopped or partial running consumers: {consumers}")
-
-            for consumer in consumers:
-                components = await consumer.components.all()
-                c = [
-                    f"name={component.name};consumption={component.consumption};running={component.running}"
-                    for component in components
-                ]
-                logger.debug(f"Consumer: {consumer.name}; Components={list(c)}")
-
+            await self._start_consumer_service.get_next_consumer(surplus=abs(p_grid))
         elif self._grid_mode == GridMode.CONSUME:
             await self._stop_consumer_service.get_next_consumer()
 
