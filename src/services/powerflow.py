@@ -1,18 +1,23 @@
 from itertools import combinations
 from typing import List, Tuple
 
-import httpx
 from loguru import logger
 from tortoise.expressions import Q
 
 from src.consumer.models import Consumer, ConsumerComponent
 from src.core.definitions import ConsumerMode, ConsumerStatus, ConsumerType, GridMode
+from src.services.component import ComponentService
 from src.services.grid_manager import grid_manager_service
 
 
-class StartConsumerService:
+class ConsumerServiceBase:
     def __init__(self) -> None:
-        ...
+        self._component_service = ComponentService()
+
+
+class StartConsumerService(ConsumerServiceBase):
+    def __init__(self) -> None:
+        super().__init__()
 
     async def get_next_consumer(self, surplus: float) -> None:
         consumers = await self._get_stopped_consumers()
@@ -62,9 +67,9 @@ class StartConsumerService:
             await consumer_state.save()
 
             for component in components_to_stop:
-                await self._stop_component(component)
+                await self._component_service.stop_component(component)
             for component in components_to_start:
-                await self._start_component(component)
+                await self._component_service.start_component(component)
 
     async def _get_stopped_consumers(self) -> List[Consumer]:
         return (
@@ -99,42 +104,10 @@ class StartConsumerService:
 
         return best["combination"], best["consumption"]
 
-    async def _start_component(self, component) -> None:
-        component.running = True
-        await component.save()
 
-        payload = {"id": component.relais, "on": True}
-        url = f"http://{component.ip}/rpc/Switch.Set"
-        try:
-            response = httpx.get(url, params=payload)
-            response.raise_for_status()
-
-            return response.json()
-
-        except httpx.HTTPError as exc:
-            print(f"Error while turning off Shelly: {exc}")
-            return None
-
-    async def _stop_component(self, component) -> None:
-        component.running = False
-        await component.save()
-
-        payload = {"id": component.relais, "on": False}
-        url = f"http://{component.ip}/rpc/Switch.Set"
-        try:
-            response = httpx.get(url, params=payload)
-            response.raise_for_status()
-
-            return response.json()
-
-        except httpx.HTTPError as exc:
-            print(f"Error while turning off Shelly: {exc}")
-            return None
-
-
-class StopConsumerService:
+class StopConsumerService(ConsumerServiceBase):
     def __init__(self) -> None:
-        ...
+        super().__init__()
 
     async def get_next_consumer(self) -> None:
         consumers = await self._get_running_consumers()
@@ -181,7 +154,7 @@ class StopConsumerService:
                 f"Stopping component {target_component.id} ({target_component.name}) consumption={target_component.consumption}! Switching consumer from {current_mode} to {new_mode}"
             )
 
-            await self._stop_component(target_component)
+            await self._component_service.stop_component(target_component)
 
             consumer_state.status = new_mode
             consumer_state.current_consumption -= target_component.consumption
@@ -192,22 +165,6 @@ class StopConsumerService:
             Q(state__mode=ConsumerMode.AUTOMATIC)
             & ~Q(state__status=ConsumerStatus.STOPPED)
         ).order_by("-priority")
-
-    async def _stop_component(self, component) -> None:
-        component.running = False
-        await component.save()
-
-        payload = {"id": component.relais, "on": False}
-        url = f"http://{component.ip}/rpc/Switch.Set"
-        try:
-            response = httpx.get(url, params=payload)
-            response.raise_for_status()
-
-            return response.json()
-
-        except httpx.HTTPError as exc:
-            print(f"Error while turning off Shelly: {exc}")
-            return None
 
 
 class PowerflowService:
