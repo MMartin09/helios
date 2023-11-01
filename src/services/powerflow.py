@@ -1,5 +1,5 @@
 from itertools import combinations
-from typing import List
+from typing import List, Tuple
 
 import httpx
 from loguru import logger
@@ -29,11 +29,13 @@ class StartConsumerService:
             consumer_state = await target_consumer.state.first()
             components = await target_consumer.components.all()
 
+            # Current surplus if no component of the consumer would run
             virtual_surplus = surplus + consumer_state.current_consumption
 
-            best_combination = await self._get_best_combination(
-                components, virtual_surplus
-            )
+            (
+                best_combination,
+                combination_consumption,
+            ) = await self._get_best_combination(components, virtual_surplus)
             running_components = [
                 component for component in components if component.running
             ]
@@ -49,6 +51,21 @@ class StartConsumerService:
             )
             logger.debug(f"Currently running components: {running_components}")
 
+            new_mode = (
+                ConsumerStatus.RUNNING
+                if len(best_combination) == len(components)
+                else ConsumerStatus.PARTIAL_RUNNING
+            )
+
+            consumer_state.status = new_mode
+            consumer_state.current_consumption = combination_consumption
+            await consumer_state.save()
+
+            for component in components_to_stop:
+                await self._stop_component(component)
+            for component in components_to_start:
+                await self._start_component(component)
+
     async def _get_stopped_consumers(self) -> List[Consumer]:
         return (
             await Consumer.filter(
@@ -61,10 +78,11 @@ class StartConsumerService:
 
     async def _get_best_combination(
         self, components: List[ConsumerComponent], current_surplus: float
-    ) -> List[ConsumerComponent]:
+    ) -> Tuple[List[ConsumerComponent], float]:
         best = {
             "surplus": float("inf"),
             "combination": None,
+            "consumption": float("inf"),
         }
 
         for r in range(1, len(components) + 1):
@@ -77,8 +95,41 @@ class StartConsumerService:
                 if 0 <= new_surplus < best["surplus"]:
                     best["surplus"] = new_surplus
                     best["combination"] = combination
+                    best["consumption"] = combination_consumption
 
-        return best["combination"]
+        return best["combination"], best["consumption"]
+
+    async def _start_component(self, component) -> None:
+        component.running = True
+        await component.save()
+
+        payload = {"id": component.relais, "on": True}
+        url = f"http://{component.ip}/rpc/Switch.Set"
+        try:
+            response = httpx.get(url, params=payload)
+            response.raise_for_status()
+
+            return response.json()
+
+        except httpx.HTTPError as exc:
+            print(f"Error while turning off Shelly: {exc}")
+            return None
+
+    async def _stop_component(self, component) -> None:
+        component.running = False
+        await component.save()
+
+        payload = {"id": component.relais, "on": False}
+        url = f"http://{component.ip}/rpc/Switch.Set"
+        try:
+            response = httpx.get(url, params=payload)
+            response.raise_for_status()
+
+            return response.json()
+
+        except httpx.HTTPError as exc:
+            print(f"Error while turning off Shelly: {exc}")
+            return None
 
 
 class StopConsumerService:
@@ -133,6 +184,7 @@ class StopConsumerService:
             await self._stop_component(target_component)
 
             consumer_state.status = new_mode
+            consumer_state.current_consumption -= target_component.consumption
             await consumer_state.save()
 
     async def _get_running_consumers(self) -> List[Consumer]:
