@@ -15,6 +15,20 @@ services:
       MARIADB_ROOT_PASSWORD: Helios_2001!
       MARIADB_DATABASE: helios
 
+  influxdb:
+    image: influxdb:2.7-alpine
+    restart: always
+    ports:
+      - "8086:8086"
+    volumes:
+      - influxdb-data:/var/lib/influxdb2
+    environment:
+      - DOCKER_INFLUXDB_INIT_MODE=setup
+      - DOCKER_INFLUXDB_INIT_USERNAME=helios
+      - DOCKER_INFLUXDB_INIT_PASSWORD=Helios_2001!
+      - DOCKER_INFLUXDB_INIT_ORG=helios
+      - DOCKER_INFLUXDB_INIT_BUCKET=helios_powerflow
+
   phpmyadmin:
     depends_on:
       - mariadb
@@ -28,3 +42,4 @@ services:
 
 volumes:
   mariadb-data:
+  influxdb-data:
