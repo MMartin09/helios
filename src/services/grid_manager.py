@@ -1,6 +1,8 @@
 from datetime import datetime, timedelta
 from typing import List
 
+from loguru import logger
+
 from src.core.definitions import GridMode
 
 
@@ -34,6 +36,7 @@ class GridManagerService:
         self._prune_old_grid_values(now)
 
         sma = self._calc_sma()
+        logger.debug(f"SMA Value: {sma}")
         self._grid_mode = self._determine_grid_mode(grid_value=sma)
 
         return self._grid_mode
@@ -69,7 +72,9 @@ class GridManagerService:
             The current SMA value.
         """
 
-        return sum(val for _, val in self._grid_values) / len(self._grid_values)
+        sma = sum(val for _, val in self._grid_values) / len(self._grid_values)
+        sma = round(sma, 2)
+        return sma
 
     @staticmethod
     def _determine_grid_mode(grid_value: float) -> GridMode:

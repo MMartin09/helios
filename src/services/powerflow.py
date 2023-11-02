@@ -45,6 +45,10 @@ class StartConsumerService(ConsumerServiceBase):
                 component for component in components if component.running
             ]
 
+            if not best_combination:
+                logger.info("No component could be started")
+                return
+
             best_combination_set = set(best_combination)
             running_components_set = set(running_components)
 
@@ -119,7 +123,7 @@ class StopConsumerService(ConsumerServiceBase):
         target_consumer = consumers[0]
 
         logger.debug(f"Found {len(consumers)} running consumers in automatic mode!")
-        logger.debug(f"Target consumer: {target_consumer.id} ({target_consumer.name}")
+        logger.debug(f"Target consumer: {target_consumer.id} ({target_consumer.name})")
 
         # Query all components of the consumer and sort them descending by the consumption
         components = await target_consumer.components.all().order_by("-consumption")
@@ -132,7 +136,7 @@ class StopConsumerService(ConsumerServiceBase):
 
         consumer_state = await target_consumer.state.first()
 
-        if target_consumer.consumer_type == ConsumerType.SCC:
+        if target_consumer.consumer_type() == ConsumerType.SCC:
             logger.debug(
                 f"Stopping component {target_component.id} ({target_component.name}) consumption={target_component.consumption}! Switching consumer from {ConsumerStatus.RUNNING} to {ConsumerStatus.STOPPED}"
             )
@@ -142,7 +146,7 @@ class StopConsumerService(ConsumerServiceBase):
             # TODO: Same code below
             consumer_state.status = ConsumerStatus.STOPPED
             await consumer_state.save()
-        elif target_consumer.consumer_type == ConsumerType.MCC:
+        elif target_consumer.consumer_type() == ConsumerType.MCC:
             current_mode = consumer_state.status
             new_mode = (
                 ConsumerStatus.PARTIAL_RUNNING
@@ -161,10 +165,14 @@ class StopConsumerService(ConsumerServiceBase):
             await consumer_state.save()
 
     async def _get_running_consumers(self) -> List[Consumer]:
-        return await Consumer.filter(
-            Q(state__mode=ConsumerMode.AUTOMATIC)
-            & ~Q(state__status=ConsumerStatus.STOPPED)
-        ).order_by("-priority")
+        return (
+            await Consumer.filter(
+                Q(state__mode=ConsumerMode.AUTOMATIC)
+                & ~Q(state__status=ConsumerStatus.STOPPED)
+            )
+            .order_by("-priority")
+            .prefetch_related("components")
+        )
 
 
 class PowerflowService:
