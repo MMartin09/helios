@@ -190,8 +190,8 @@ class PowerflowService:
 
         Args:
             p_grid: Current grid value.
-        """
 
+        """
         self._update_grid_mode(p_grid)
 
         if self._grid_mode == GridMode.FEED_IN:
@@ -204,8 +204,8 @@ class PowerflowService:
 
         Args:
             p_grid: Current grid value.
-        """
 
+        """
         if (grid_mode := self._grid_manager_service.update(p_grid)) != self._grid_mode:
             logger.info(f"Switching GridMode from {self._grid_mode} to {grid_mode}")
             self._grid_mode = grid_mode
