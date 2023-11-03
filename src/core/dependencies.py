@@ -4,6 +4,7 @@ from influxdb_client import InfluxDBClient
 from influxdb_client.client.write_api import SYNCHRONOUS, WriteApi
 
 from src.core.settings.app import get_app_settings
+from src.services.influxdb_logger import InfluxDBLogger
 
 
 @lru_cache(maxsize=1)
@@ -19,3 +20,9 @@ def get_influxdb_client() -> InfluxDBClient:
 @lru_cache(maxsize=1)
 def get_influxdb_write_api() -> WriteApi:
     return get_influxdb_client().write_api(write_options=SYNCHRONOUS)
+
+
+@lru_cache(maxsize=1)
+def get_influxdb_logger() -> InfluxDBLogger:
+    app_settings = get_app_settings()
+    return InfluxDBLogger(app_settings)

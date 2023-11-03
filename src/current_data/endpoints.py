@@ -1,10 +1,9 @@
 from typing import Any
 
 from fastapi import APIRouter, Request
-from influxdb_client import Point
 from loguru import logger
 
-from src.core.dependencies import get_influxdb_write_api
+from src.core.dependencies import get_influxdb_logger
 from src.services.powerflow import powerflow_service
 from src.utils.fronius_data_parser import FroniusDataParser
 
@@ -20,11 +19,8 @@ async def powerflow(request: Request) -> Any:
 
     await powerflow_service.update(current_data.p_grid)
 
-    influxdb_write_api = get_influxdb_write_api()
-    data_point = Point.from_dict(
-        {"measurement": "powerflow", "fields": current_data.model_dump()}
-    )
-    influxdb_write_api.write(bucket="helios_powerflow", record=data_point)
+    influxdb_logger = get_influxdb_logger()
+    influxdb_logger.log_current_powerflow_data(current_data)
 
     return {"status": "ok"}
 
@@ -36,10 +32,7 @@ async def meter(request: Request) -> Any:
 
     logger.info(f"Current Meter data: {current_data.model_dump()}")
 
-    influxdb_write_api = get_influxdb_write_api()
-    data_point = Point.from_dict(
-        {"measurement": "meter", "fields": current_data.model_dump()}
-    )
-    influxdb_write_api.write(bucket="helios_powerflow", record=data_point)
+    influxdb_logger = get_influxdb_logger()
+    influxdb_logger.log_current_meter_data(current_data)
 
     return {"status": "ok"}
