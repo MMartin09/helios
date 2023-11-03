@@ -5,17 +5,13 @@ from src.core.definitions import ConsumerMode, ConsumerStatus, ConsumerType
 
 
 class Consumer(Model):
-    id = fields.IntField(max_length=64, pk=True)
+    id = fields.IntField(pk=True)
 
     name = fields.CharField(max_length=256, unique=True, index=True)
     priority = fields.IntField(default=0, unique=True)
 
-    minimum_uninterrupted_runtime = fields.SmallIntField(default=0)
-    maximum_runtime_per_day = fields.SmallIntField(default=0)
-
     components: fields.ReverseRelation["ConsumerComponent"]
     state: fields.OneToOneRelation["ConsumerState"]
-    runtimes: fields.ReverseRelation["ConsumerRuntime"]
 
     def consumer_type(self) -> ConsumerType:
         return ConsumerType.SCC if len(self.components) == 1 else ConsumerType.MCC
@@ -68,20 +64,6 @@ class ConsumerState(Model):
 
     class Meta:
         table = "consumer_state"
-
-
-class ConsumerRuntime(Model):
-    id = fields.IntField(pk=True)
-
-    date = fields.DateField()
-    runtime = fields.SmallIntField()
-
-    consumer: fields.ForeignKeyRelation["Consumer"] = fields.ForeignKeyField(
-        "models.Consumer", related_name="runtimes", on_delete=fields.OnDelete.CASCADE
-    )
-
-    class Meta:
-        table = "consumer_runtime"
 
 
 Consumer_Pydantic = pydantic_model_creator(Consumer, name="Consumer")

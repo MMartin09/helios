@@ -6,8 +6,8 @@ from src.consumer.models import ConsumerComponent
 from src.core.dependencies import get_influxdb_write_api
 
 
-class ComponentService:
-    """Consumer Component Service.
+class ComponentManager:
+    """Consumer Component Manager.
 
     TODO: The service has to check the type of the component (e.g., Shelly Switch) and call the correct functions.
     TODO: Log the "switch" in InfluxDB
@@ -18,9 +18,21 @@ class ComponentService:
         self._influxdb_write_api: WriteApi = get_influxdb_write_api()
 
     async def start_component(self, component: ConsumerComponent) -> None:
+        """Start a consumer component.
+
+        Args:
+            component: Target component.
+
+        """
         await self._switch_component(component, on=True)
 
     async def stop_component(self, component: ConsumerComponent) -> None:
+        """Stop a consumer component.
+
+        Args:
+            component: Target component.
+
+        """
         await self._switch_component(component, on=False)
 
     async def _switch_component(self, component: ConsumerComponent, on: bool) -> None:
@@ -67,6 +79,8 @@ class ComponentService:
     @staticmethod
     def _switch_shelly_switch(ip: str, relais: int, on: bool) -> None:
         """Switch the output state of a Shelly switch.
+
+        TODO: Use async HTTP Client.
 
         Args:
             ip: IPv4-Address of the switch.

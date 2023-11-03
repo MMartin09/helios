@@ -17,7 +17,7 @@ class InfluxDBSettings(BaseSettings):
 class AppSettings(BaseSettings):
     APP_TITLE: str = "helios"
     APP_DESCRIPTION: str = "Helios Automation and Monitoring"
-    APP_VERSION: str = "1.0"
+    APP_VERSION: str = "0.1"
 
     MARIA_DB: MariaDBSettings = MariaDBSettings()
     INFLUX_DB: InfluxDBSettings = InfluxDBSettings()

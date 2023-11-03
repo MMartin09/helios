@@ -2,17 +2,18 @@ from itertools import combinations
 from typing import List, Tuple
 
 from loguru import logger
-from tortoise.expressions import Q
 
-from src.consumer.models import Consumer, ConsumerComponent
-from src.core.definitions import ConsumerMode, ConsumerStatus, ConsumerType, GridMode
-from src.services.component import ComponentService
+from src.consumer.models import ConsumerComponent
+from src.consumer.services.component import ComponentManager
+from src.consumer.services.consumer import ConsumerManager
+from src.core.definitions import ConsumerStatus, ConsumerType, GridMode
 from src.services.grid_manager import grid_manager_service
 
 
 class ConsumerServiceBase:
     def __init__(self) -> None:
-        self._component_service = ComponentService()
+        self._consumer_manager = ConsumerManager()
+        self._component_manager = ComponentManager()
 
 
 class StartConsumerService(ConsumerServiceBase):
@@ -20,7 +21,7 @@ class StartConsumerService(ConsumerServiceBase):
         super().__init__()
 
     async def get_next_consumer(self, surplus: float) -> None:
-        consumers = await self._get_stopped_consumers()
+        consumers = await self._consumer_manager.get_stopped_consumers()
         if not consumers:
             logger.debug("No consumer left to start")
             return
@@ -71,19 +72,9 @@ class StartConsumerService(ConsumerServiceBase):
             await consumer_state.save()
 
             for component in components_to_stop:
-                await self._component_service.stop_component(component)
+                await self._component_manager.stop_component(component)
             for component in components_to_start:
-                await self._component_service.start_component(component)
-
-    async def _get_stopped_consumers(self) -> List[Consumer]:
-        return (
-            await Consumer.filter(
-                Q(state__mode=ConsumerMode.AUTOMATIC)
-                & ~Q(state__status=ConsumerStatus.RUNNING)
-            )
-            .order_by("-priority")
-            .prefetch_related("components")
-        )
+                await self._component_manager.start_component(component)
 
     async def _get_best_combination(
         self, components: List[ConsumerComponent], current_surplus: float
@@ -114,7 +105,7 @@ class StopConsumerService(ConsumerServiceBase):
         super().__init__()
 
     async def get_next_consumer(self) -> None:
-        consumers = await self._get_running_consumers()
+        consumers = await self._consumer_manager.get_running_consumers()
         if not consumers:
             logger.debug("No consumer left to stop")
             return
@@ -158,21 +149,11 @@ class StopConsumerService(ConsumerServiceBase):
                 f"Stopping component {target_component.id} ({target_component.name}) consumption={target_component.consumption}! Switching consumer from {current_mode} to {new_mode}"
             )
 
-            await self._component_service.stop_component(target_component)
+            await self._component_manager.stop_component(target_component)
 
             consumer_state.status = new_mode
             consumer_state.current_consumption -= target_component.consumption
             await consumer_state.save()
-
-    async def _get_running_consumers(self) -> List[Consumer]:
-        return (
-            await Consumer.filter(
-                Q(state__mode=ConsumerMode.AUTOMATIC)
-                & ~Q(state__status=ConsumerStatus.STOPPED)
-            )
-            .order_by("-priority")
-            .prefetch_related("components")
-        )
 
 
 class PowerflowService:

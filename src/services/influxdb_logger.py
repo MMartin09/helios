@@ -57,4 +57,5 @@ class InfluxDBLogger:
         return Point.from_dict({"measurement": measurement, "fields": fields})
 
     def _write_data(self, bucket: str, record: Point) -> None:
+        # TODO: Error handling
         self._write_api.write(bucket, record=record)

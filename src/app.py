@@ -25,6 +25,7 @@ def get_app() -> FastAPI:
 
     # TODO: move the models out from here
     models = [
+        "src.automation_settings.models",
         "src.consumer.models",
     ]
 

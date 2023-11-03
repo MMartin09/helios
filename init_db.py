@@ -1,9 +1,6 @@
 import asyncio
-from itertools import combinations
 
 from tortoise import Tortoise
-from tortoise.expressions import Q
-from tortoise.query_utils import Prefetch
 
 from src.consumer.models import (
     Consumer,
@@ -18,44 +15,12 @@ async def main():
     app_settings = get_app_settings()
 
     models = [
+        "src.automation_settings.models",
         "src.consumer.models",
     ]
 
     await Tortoise.init(db_url=app_settings.MARIA_DB.URI, modules={"models": models})
     await Tortoise.generate_schemas()
-
-    await Consumer.all().prefetch_related("components")
-    consumer = (
-        await Consumer.filter(name="Heating-Rod").prefetch_related("components").first()
-    )
-    print(consumer.consumer_type())
-    return
-    # consumer_state = await consumer.state.first()
-    # print(consumer_state.current_consumption)
-
-    virtual_surplus = 800
-
-    components = await consumer.components.all()
-
-    best_surplus = float("inf")
-    best_combination = None
-
-    for r in range(1, len(components) + 1):
-        for component_combination in combinations(components, r):
-            print(list(component_combination))
-            combination_consumption = sum(
-                component.consumption for component in component_combination
-            )
-            new_surplus = virtual_surplus - combination_consumption
-            print(component_combination, combination_consumption, new_surplus)
-
-            if -250 <= new_surplus < best_surplus:
-                best_surplus = new_surplus
-                best_combination = component_combination
-
-    print(f"BEST COMBINATION {best_combination}! NEW SURPLUS WILL BE: {best_surplus}")
-
-    return
 
     heating_rod = await Consumer.create(name="Heating-Rod", priority=1)
 
@@ -65,6 +30,7 @@ async def main():
         ip="192.168.0.103",
         relais=0,
         consumer=heating_rod,
+        running=False,
     )
     _ = await ConsumerComponent.create(
         name="Component_2",
@@ -72,10 +38,14 @@ async def main():
         ip="192.168.0.103",
         relais=1,
         consumer=heating_rod,
+        running=False,
     )
 
     _ = await ConsumerState.create(
-        consumer=heating_rod, mode=ConsumerMode.AUTOMATIC, status=ConsumerStatus.RUNNING
+        consumer=heating_rod,
+        mode=ConsumerMode.AUTOMATIC,
+        status=ConsumerStatus.STOPPED,
+        current_conmsuption=0,
     )
 
     # consumer_1 = await Consumer.create(name="1111")
@@ -109,27 +79,5 @@ async def main():
     # await ConsumerState.create(consumer=consumer_3, mode=ConsumerMode.AUTOMATIC)
 
 
-async def query_sample():
-    models = [
-        "src.consumer.models",
-    ]
-    app_settings = get_app_settings()
-
-    Tortoise.init_models(models, "models")
-    await Tortoise.init(db_url=app_settings.MARIA_DB.URI, modules={"models": models})
-
-    consumers = await Consumer.all().prefetch_related(
-        Prefetch(
-            "state",
-            queryset=ConsumerState.filter(
-                Q(mode=ConsumerMode.AUTOMATIC) & ~Q(status=ConsumerStatus.RUNNING)
-            ),
-        )
-    )
-    for consumer in consumers:
-        print(consumer.name)
-
-
 if __name__ == "__main__":
     asyncio.run(main())
-    # asyncio.run(query_sample())
