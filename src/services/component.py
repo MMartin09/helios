@@ -42,10 +42,13 @@ class ComponentService:
             self._switch_shelly_switch(ip=component.ip, relais=component.relais, on=on)
         except httpx.HTTPError:
             # TODO: Send error using PushOver
+            # TODO: Add consumer id in log (makes it easier to read)
             logger.error(
                 f"Error trying switching component {component.id} {'on' if on else 'off'}!"
             )
             return
+
+        # TODO: Log state transition
 
         consumer = await component.consumer
         data_point = Point.from_dict(
