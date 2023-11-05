@@ -1,10 +1,9 @@
 import httpx
-from influxdb_client import Point, WriteApi
 from loguru import logger
 
 from src import integrations
 from src.consumer.models import ConsumerComponent
-from src.core.dependencies import get_influxdb_write_api
+from src.core.dependencies import get_influxdb_logger
 
 
 class ComponentManager:
@@ -16,7 +15,7 @@ class ComponentManager:
     """
 
     def __init__(self) -> None:
-        self._influxdb_write_api: WriteApi = get_influxdb_write_api()
+        self._influxdb_logger = get_influxdb_logger()
         self.shelly_switch_integration = integrations.ShellySwitch()
 
     async def start_component(self, component: ConsumerComponent) -> None:
@@ -65,18 +64,13 @@ class ComponentManager:
             )
             return
 
-        # TODO: Move the logging into the InfluxDB Logger
-
         consumer = await component.consumer
-        data_point = Point.from_dict(
-            {
-                "measurement": "state_transition",
-                "tags": {"consumer": consumer.id, "component": component.id},
-                "fields": {"old_state": component.running, "new_state": on},
-            }
+        self._influxdb_logger.log_component_state_transition(
+            component=component,
+            consumer_id=consumer.id,
+            old_state=component.running,
+            new_state=on,
         )
-
-        self._influxdb_write_api.write(bucket="helios_consumer_logs", record=data_point)
 
         component.running = on
         await component.save()
