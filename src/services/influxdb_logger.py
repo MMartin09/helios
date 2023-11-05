@@ -17,6 +17,11 @@ class InfluxDBLogger:
 
     """
 
+    BUCKET_MAPPING = {
+        "powerflow": "helios_powerflow",
+        "meter": "helios_powerflow",
+    }
+
     def __init__(self, app_settings: AppSettings) -> None:
         self._client = InfluxDBClient(
             url=app_settings.INFLUX_DB.URI,
@@ -32,11 +37,9 @@ class InfluxDBLogger:
             data: DataPowerflow object containing the current data.
 
         """
-        bucket = "helios_powerflow"
-
         measurement = "powerflow"
         fields = data.model_dump()
-        self._log_data(bucket, measurement, fields)
+        self._log_data(measurement, fields)
 
     def log_current_meter_data(self, data: DataMeter) -> None:
         """Log the current meter data.
@@ -45,19 +48,36 @@ class InfluxDBLogger:
             data: DataMeter object containing the current data.
 
         """
-        bucket = "helios_powerflow"
-
         measurement = "meter"
         fields = data.model_dump()
-        self._log_data(bucket, measurement, fields)
+        self._log_data(measurement, fields)
 
-    def _log_data(self, bucket: str, measurement: str, fields: Dict[str, Any]) -> None:
+    def _log_data(self, measurement: str, fields: Dict[str, Any]) -> None:
+        bucket = self.BUCKET_MAPPING[measurement]
         record = self._generate_record(measurement, fields)
         self._write_data(bucket, record)
 
     def _generate_record(self, measurement: str, fields: Dict[str, Any]) -> Point:
+        """Generate a InfluxDB data point.
+
+        Args:
+            measurement: Measurement name
+            fields: Fields to add to the record.
+
+        Returns:
+            An InfluxDB data point.
+
+        """
         return Point.from_dict({"measurement": measurement, "fields": fields})
 
     def _write_data(self, bucket: str, record: Point) -> None:
-        # TODO: Error handling
+        """Write a data point into an InfluxDB bucket.
+
+        TODO: Error handling
+
+        Args:
+            bucket: Target bucket.
+            record: Data point to write.
+
+        """
         self._write_api.write(bucket, record=record)

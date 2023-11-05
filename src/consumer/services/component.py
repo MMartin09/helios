@@ -65,7 +65,7 @@ class ComponentManager:
             )
             return
 
-        # TODO: Log state transition
+        # TODO: Move the logging into the InfluxDB Logger
 
         consumer = await component.consumer
         data_point = Point.from_dict(
