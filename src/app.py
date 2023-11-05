@@ -29,6 +29,7 @@ def get_app() -> FastAPI:
         "src.consumer.models",
     ]
 
+    # TODO: should be done in the lifespan function
     Tortoise.init_models(models, "models")
     register_tortoise(
         app,

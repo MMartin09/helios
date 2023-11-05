@@ -7,6 +7,7 @@ from src.consumer.models import ConsumerComponent
 from src.consumer.services.component import ComponentManager
 from src.consumer.services.consumer import ConsumerManager
 from src.core.definitions import ConsumerStatus, ConsumerType, GridMode
+from src.core.settings.automation import automation_settings
 from src.services.grid_manager import grid_manager_service
 
 
@@ -19,6 +20,9 @@ class ConsumerServiceBase:
 class StartConsumerService(ConsumerServiceBase):
     def __init__(self) -> None:
         super().__init__()
+
+        # TODO: Explain the -50
+        self._threshold: int = automation_settings.CONSUME_THRESHOLD - 50
 
     async def get_next_consumer(self, surplus: float) -> None:
         consumers = await self._consumer_manager.get_stopped_consumers()
@@ -92,7 +96,7 @@ class StartConsumerService(ConsumerServiceBase):
                 )
                 new_surplus = current_surplus - combination_consumption
 
-                if 0 <= new_surplus < best["surplus"]:
+                if -self._threshold <= new_surplus < best["surplus"]:
                     best["surplus"] = new_surplus
                     best["combination"] = combination
                     best["consumption"] = combination_consumption

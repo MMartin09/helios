@@ -4,6 +4,7 @@ from typing import List
 from loguru import logger
 
 from src.core.definitions import GridMode
+from src.core.settings.automation import automation_settings
 
 
 class GridManagerService:
@@ -21,6 +22,11 @@ class GridManagerService:
         self._grid_values: List = []
         self._grid_mode: GridMode = GridMode.NOT_SET
 
+        self._window_time: timedelta = timedelta(
+            minutes=automation_settings.WINDOW_TIME
+        )
+        self._threshold: int = automation_settings.CONSUME_THRESHOLD
+
     def update(self, p_grid: float) -> GridMode:
         """Update the service with a new grid value.
 
@@ -29,8 +35,8 @@ class GridManagerService:
 
         Returns:
             The current GridMode.
-        """
 
+        """
         now = datetime.now()
         self._grid_values.append((now, p_grid))
         self._prune_old_grid_values(now)
@@ -46,8 +52,8 @@ class GridManagerService:
 
         Returns:
             The current GridMode.
-        """
 
+        """
         return self._grid_mode
 
     def _prune_old_grid_values(self, now: datetime) -> None:
@@ -58,9 +64,9 @@ class GridManagerService:
 
         Args:
             now: Current time.
-        """
 
-        cutoff_time = now - timedelta(minutes=5)  # TODO: From settings
+        """
+        cutoff_time = now - self._window_time
         self._grid_values = [
             (ts, value) for ts, value in self._grid_values if ts > cutoff_time
         ]
@@ -70,14 +76,13 @@ class GridManagerService:
 
         Returns:
             The current SMA value.
-        """
 
+        """
         sma = sum(val for _, val in self._grid_values) / len(self._grid_values)
         sma = round(sma, 2)
         return sma
 
-    @staticmethod
-    def _determine_grid_mode(grid_value: float) -> GridMode:
+    def _determine_grid_mode(self, grid_value: float) -> GridMode:
         """Determine the current GridMode.
 
         The current GridMode is determined using the current SMA and the 'switching' threshold.
@@ -87,9 +92,9 @@ class GridManagerService:
 
         Returns:
             The current GridMode.
-        """
 
-        if grid_value < 0:  # TODO: From settings
+        """
+        if grid_value < self._threshold:
             return GridMode.FEED_IN
         else:
             return GridMode.CONSUME
