@@ -1,33 +1,9 @@
 # Helios
 
-
-## Project structure
-
-**automation_settings**
-Domain-package the automation settings.
-
-**consumer**
-Domain-package for the consumers.
-
-**core**
-Contains the code relevant for the *core* of the API.
-
-**current_data**
-Domain-package for the current measurement data.
-This includes for example the current powerflow as well as the current meter data.
-
-**dto**
-Contains *Data Transfer Objects*.
-
-**integrations**
-Contains the integrations to interact with the "hardware" components.
-Each type of component (e.g., switch) is separated into a sub-package.
-
-**services**
-A collection of various service classes.
-
-**utils**
-Various helper functions.
+[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/charliermarsh/ruff/main/assets/badge/v1.json)](https://github.com/charliermarsh/ruff)
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg?style=flat-square)](https://github.com/psf/black)
+[![Imports: isort](https://img.shields.io/badge/%20imports-isort-%231674b1?style=flat-square&labelColor=ef8336)](https://pycqa.github.io/isort/)
+[![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit)](https://github.com/pre-commit/pre-commit)
 
 ## Contribution
 
