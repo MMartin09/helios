@@ -3,6 +3,7 @@ from typing import Any, Dict
 from influxdb_client import InfluxDBClient, Point
 from influxdb_client.client.write_api import SYNCHRONOUS
 
+from src.consumer.models import ConsumerComponent
 from src.core.settings.app import AppSettings
 from src.dto.powerflow import DataMeter, DataPowerflow
 
@@ -20,6 +21,7 @@ class InfluxDBLogger:
     BUCKET_MAPPING = {
         "powerflow": "helios_powerflow",
         "meter": "helios_powerflow",
+        "state_transition": "helios_consumer_logs",
     }
 
     def __init__(self, app_settings: AppSettings) -> None:
@@ -52,23 +54,66 @@ class InfluxDBLogger:
         fields = data.model_dump()
         self._log_data(measurement, fields)
 
-    def _log_data(self, measurement: str, fields: Dict[str, Any]) -> None:
-        bucket = self.BUCKET_MAPPING[measurement]
-        record = self._generate_record(measurement, fields)
-        self._write_data(bucket, record)
+    def log_component_state_transition(
+        self,
+        component: ConsumerComponent,
+        consumer_id: int,
+        old_state: bool,
+        new_state: bool,
+    ) -> None:
+        """Log the state transition of a component.
 
-    def _generate_record(self, measurement: str, fields: Dict[str, Any]) -> Point:
-        """Generate a InfluxDB data point.
+        Args:
+            component: Target component.
+            consumer_id: Id of the related consumer.
+            old_state: Old output state.
+            new_state: New input state.
+
+        """
+        measurement = "state_transition"
+        tags = {"consumer": consumer_id, "component": component.id}
+        fields = {"old_state": old_state, "new_state": new_state}
+        self._log_data(measurement=measurement, fields=fields, tags=tags)
+
+    def _log_data(
+        self,
+        measurement: str,
+        fields: Dict[str, Any],
+        tags: Dict[str, Any] | None = None,
+    ) -> None:
+        """Log data into InfluxDB.
 
         Args:
             measurement: Measurement name
             fields: Fields to add to the record.
 
+        """
+        bucket = self.BUCKET_MAPPING[measurement]
+        record = self._generate_record(
+            measurement=measurement, fields=fields, tags=tags
+        )
+        self._write_data(bucket, record)
+
+    def _generate_record(
+        self,
+        measurement: str,
+        fields: Dict[str, Any],
+        tags: Dict[str, Any] | None = None,
+    ) -> Point:
+        """Generate a InfluxDB data point.
+
+        Args:
+            measurement: Measurement name
+            fields: Fields to add to the record.
+            tags: Optional. Set of tags added to the measurement.
+
         Returns:
             An InfluxDB data point.
 
         """
-        return Point.from_dict({"measurement": measurement, "fields": fields})
+        return Point.from_dict(
+            {"measurement": measurement, "fields": fields, "tags": tags or {}}
+        )
 
     def _write_data(self, bucket: str, record: Point) -> None:
         """Write a data point into an InfluxDB bucket.
