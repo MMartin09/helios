@@ -2,6 +2,7 @@ import asyncio
 
 from tortoise import Tortoise
 
+from src import integrations
 from src.consumer.models import (
     Consumer,
     ConsumerComponent,
@@ -21,6 +22,17 @@ async def main():
 
     await Tortoise.init(db_url=app_settings.MARIA_DB.URI, modules={"models": models})
     await Tortoise.generate_schemas()
+
+    heating_rod = (
+        await Consumer.filter(name="Heating-Rod").first().prefetch_related("components")
+    )
+    component_1 = await heating_rod.components.filter(name="Component_1").first()
+    print(component_1)
+
+    shelly_switch_integration = integrations.ShellySwitch()
+    status = await shelly_switch_integration.get_switch_status(component_1)
+    print(f"Status of {component_1.name} = {status}")
+    return
 
     heating_rod = await Consumer.create(name="Heating-Rod", priority=1)
 

@@ -10,6 +10,8 @@ from src.dto.powerflow import DataMeter, DataPowerflow
 class InfluxDBLogger:
     """Service class to log data in InfluxDB.
 
+    TODO: Implement a bucket mapping [measurement, bucket]
+
     Args:
         app_settings: AppSettings object to initialize the InfluxDBClient.
 

@@ -2,6 +2,7 @@ import httpx
 from influxdb_client import Point, WriteApi
 from loguru import logger
 
+from src import integrations
 from src.consumer.models import ConsumerComponent
 from src.core.dependencies import get_influxdb_write_api
 
@@ -16,6 +17,7 @@ class ComponentManager:
 
     def __init__(self) -> None:
         self._influxdb_write_api: WriteApi = get_influxdb_write_api()
+        self.shelly_switch_integration = integrations.ShellySwitch()
 
     async def start_component(self, component: ConsumerComponent) -> None:
         """Start a consumer component.
@@ -51,7 +53,10 @@ class ComponentManager:
             return
 
         try:
-            self._switch_shelly_switch(ip=component.ip, relais=component.relais, on=on)
+            if on:
+                await self.shelly_switch_integration.switch_on(component)
+            else:
+                await self.shelly_switch_integration.switch_off(component)
         except httpx.HTTPError:
             # TODO: Send error using PushOver
             # TODO: Add consumer id in log (makes it easier to read)
@@ -75,24 +80,3 @@ class ComponentManager:
 
         component.running = on
         await component.save()
-
-    @staticmethod
-    def _switch_shelly_switch(ip: str, relais: int, on: bool) -> None:
-        """Switch the output state of a Shelly switch.
-
-        TODO: Use async HTTP Client.
-
-        Args:
-            ip: IPv4-Address of the switch.
-            relais: Relais number to switch.
-            on: True to set the output to active. False otherwise.
-
-        """
-        payload = {"id": relais, "on": on}
-        url = f"http://{ip}/rpc/Switch.Set"
-
-        try:
-            response = httpx.get(url, params=payload)
-            response.raise_for_status()
-        except httpx.HTTPError as err:
-            logger.error(err)
