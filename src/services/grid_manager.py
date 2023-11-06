@@ -1,9 +1,8 @@
 from datetime import datetime, timedelta
 from typing import List
 
-from loguru import logger
-
 from src.core.definitions import GridMode
+from src.core.dependencies import get_influxdb_logger
 from src.core.settings.automation import automation_settings
 
 
@@ -19,6 +18,8 @@ class GridManagerService:
     """
 
     def __init__(self) -> None:
+        self._influxdb_logger = get_influxdb_logger()
+
         self._grid_values: List = []
         self._grid_mode: GridMode = GridMode.NOT_SET
 
@@ -42,7 +43,7 @@ class GridManagerService:
         self._prune_old_grid_values(now)
 
         sma = self._calc_sma()
-        logger.debug(f"SMA Value: {sma}")
+        self._influxdb_logger.log_current_sma_value(sma)
         self._grid_mode = self._determine_grid_mode(grid_value=sma)
 
         return self._grid_mode

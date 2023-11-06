@@ -21,6 +21,7 @@ class InfluxDBLogger:
     BUCKET_MAPPING = {
         "powerflow": "helios_powerflow",
         "meter": "helios_powerflow",
+        "sma": "helios_powerflow",
         "state_transition": "helios_consumer_logs",
     }
 
@@ -52,6 +53,17 @@ class InfluxDBLogger:
         """
         measurement = "meter"
         fields = data.model_dump()
+        self._log_data(measurement, fields)
+
+    def log_current_sma_value(self, sma: float) -> None:
+        """Log the current SMA value.
+
+        Args:
+            sma: Current SMA value.
+
+        """
+        measurement = "sma"
+        fields = {"sma": sma}
         self._log_data(measurement, fields)
 
     def log_component_state_transition(
