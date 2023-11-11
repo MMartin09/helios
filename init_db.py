@@ -3,6 +3,7 @@ import asyncio
 from tortoise import Tortoise
 
 from src import integrations
+from src.automation_settings.service import get_automation_settings_service
 from src.consumer.models import (
     Consumer,
     ConsumerComponent,
@@ -22,6 +23,20 @@ async def main():
 
     await Tortoise.init(db_url=app_settings.MARIA_DB.URI, modules={"models": models})
     await Tortoise.generate_schemas()
+
+    ass = get_automation_settings_service()
+    await ass.load_from_db()
+    return
+
+    # _automation_settings = get_automation_settings()
+    # await AutomationSettings.load_from_db()
+    # settings_db = await AutomationSettings.all()
+    # setting_keys = [setting.key for setting in settings_db]
+    # for field, field_info in _automation_settings.model_fields.items():
+    #    if field not in setting_keys:
+    #        await AutomationSettings.create(key=field, value=field_info.default)
+
+    return
 
     heating_rod = (
         await Consumer.filter(name="Heating-Rod").first().prefetch_related("components")
