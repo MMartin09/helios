@@ -151,6 +151,8 @@ class InfluxDBLogger:
     ) -> str:
         """Determine the transition type of consumer component
 
+        TODO: Not really happy with this solution.
+
         Args:
             old_state: Old output state.
             new_state: New input state.
