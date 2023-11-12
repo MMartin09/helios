@@ -11,7 +11,7 @@ from src.dto.powerflow import DataMeter, DataPowerflow
 class InfluxDBLogger:
     """Service class to log data in InfluxDB.
 
-    TODO: Implement a bucket mapping [measurement, bucket]
+    TODO: Implement error handling for the data logging
 
     Args:
         app_settings: AppSettings object to initialize the InfluxDBClient.
@@ -83,8 +83,15 @@ class InfluxDBLogger:
 
         """
         measurement = "state_transition"
-        tags = {"consumer": consumer_id, "component": component.id}
-        fields = {"old_state": old_state, "new_state": new_state}
+        transition_type = self._determine_component_transition_type(
+            old_state, new_state
+        )
+        tags = {
+            "transition_entity": "component",
+            "consumer": consumer_id,
+            "component": component.id,
+        }
+        fields = {"transition_type": transition_type}
         self._log_data(measurement=measurement, fields=fields, tags=tags)
 
     def _log_data(
@@ -138,3 +145,21 @@ class InfluxDBLogger:
 
         """
         self._write_api.write(bucket, record=record)
+
+    def _determine_component_transition_type(
+        self, old_state: bool, new_state: bool
+    ) -> str:
+        """Determine the transition type of consumer component
+
+        Args:
+            old_state: Old output state.
+            new_state: New input state.
+
+        Returns:
+            Transition type of the component. E.g., on_to_off.
+
+        """
+        old_state_str = "on" if old_state else "off"
+        new_state_str = "on" if new_state else "off"
+
+        return f"{old_state_str}_to_{new_state_str}"
