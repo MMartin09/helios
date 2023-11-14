@@ -136,7 +136,7 @@ class StopConsumerService(ConsumerServiceBase):
                 f"Stopping component {target_component.id} ({target_component.name}) consumption={target_component.consumption}! Switching consumer from {ConsumerStatus.RUNNING} to {ConsumerStatus.STOPPED}"
             )
 
-            await self._stop_component(target_component)
+            await self._component_manager.stop_component(target_component)
 
             # TODO: Same code below
             consumer_state.status = ConsumerStatus.STOPPED

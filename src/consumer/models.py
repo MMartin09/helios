@@ -52,7 +52,6 @@ class ConsumerState(Model):
     status: ConsumerStatus = fields.CharEnumField(
         ConsumerStatus, max_length=16, default=ConsumerStatus.STOPPED
     )
-    started_at = fields.DatetimeField(auto_now_add=True)
     current_consumption = fields.SmallIntField(
         default=0,
         description="Current total consumer consumption. Important for MCCs. ",

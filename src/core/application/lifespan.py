@@ -5,6 +5,7 @@ from fastapi import FastAPI
 from tortoise import Tortoise, connections
 
 from src.automation_settings.service import get_automation_settings_service
+from src.consumer.services.consumer import ConsumerManager
 from src.core.settings.app import get_app_settings
 
 
@@ -29,6 +30,10 @@ async def service_lifespan(app: FastAPI) -> AsyncIterator[None]:
     app_settings = get_app_settings()
     await init_orm(app_settings.MARIA_DB.URI)
     await init_automation_settings()
+
+    # TODO: Not really good here. But for now its ok.
+    _consumer_manager = ConsumerManager()
+    await _consumer_manager.synchronize_status_with_db()
 
     yield
 
