@@ -55,12 +55,13 @@ class ConsumerManager:
     async def synchronize_status_with_db(self) -> None:
         """
 
+        TODO: Refactoring required
         TODO: What if the consumer is on mode "Hand_<>"
         TODO: Don't use the ShellySwitch integration
         TODO: Should the part with the components moved to the component manager?
 
         """
-        _shelly_switch_integration = integrations.ShellySwitch()
+        _switch_integration = integrations.Switch()
 
         consumers = await Consumer.all().prefetch_related("components")
 
@@ -72,7 +73,7 @@ class ConsumerManager:
             consumer_consumption = 0
             running_components = 0
             for component in consumer_components:
-                running = await _shelly_switch_integration.get_switch_status(component)
+                running = await _switch_integration.get_switch_status(component)
                 if running != component.running:
                     logger.info(
                         f"Updating component {component.id} (consumer={consumer.id}). Status in db={component.running}; True state={running}"

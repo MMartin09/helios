@@ -16,7 +16,7 @@ class ComponentManager:
 
     def __init__(self) -> None:
         self._influxdb_logger = get_influxdb_logger()
-        self._shelly_switch_integration = integrations.ShellySwitch()
+        self._switch_integration = integrations.Switch()
 
     async def start_component(self, component: ConsumerComponent) -> None:
         """Start a consumer component.
@@ -53,9 +53,9 @@ class ComponentManager:
 
         try:
             if on:
-                await self._shelly_switch_integration.switch_on(component)
+                await self._switch_integration.switch_on(component)
             else:
-                await self._shelly_switch_integration.switch_off(component)
+                await self._switch_integration.switch_off(component)
         except httpx.HTTPError:
             # TODO: Send error using PushOver
             # TODO: Add consumer id in log (makes it easier to read)

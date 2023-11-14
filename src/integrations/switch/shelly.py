@@ -4,9 +4,10 @@ import httpx
 from loguru import logger
 
 from src.consumer.models import ConsumerComponent
+from src.integrations.switch.switch import BaseSwitch
 
 
-class ShellySwitch:
+class ShellySwitch(BaseSwitch):
     """Integration for Shelly switches.
 
     The integration supports only "Gen 2" devices.
@@ -20,36 +21,12 @@ class ShellySwitch:
         ...
 
     async def switch_on(self, component: ConsumerComponent) -> None:
-        """Switch the output channel on.
-
-        Args:
-            component: Target component.
-
-        """
         await self._switch_output(component, on=True)
 
     async def switch_off(self, component: ConsumerComponent) -> None:
-        """Switch the output channel off.
-
-        Args:
-            component: Target component.
-
-        """
         await self._switch_output(component, on=False)
 
     async def get_switch_status(self, component: ConsumerComponent) -> bool:
-        """Get the current status of the output channel.
-
-        False means the output channel is switched off.
-        True means the output channel is switched on.
-
-        Args:
-            component: Target component.
-
-        Returns:
-            Current state of the output channel.
-
-        """
         response = await self._send_request(component, method="Switch.GetStatus")
         return response["output"]
 

@@ -1,1 +1,1 @@
-from src.integrations.switch.shelly import ShellySwitch  # noqa: F401
+from src.integrations.switch.switch import Switch  # noqa: F401
