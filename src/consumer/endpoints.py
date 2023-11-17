@@ -12,7 +12,12 @@ from src.consumer.models import (
 router = APIRouter(tags=["consumer"])
 
 
-@router.get("/", response_model=List[ConsumerOut_Pydantic])
+@router.get(
+    "/",
+    response_model=List[ConsumerOut_Pydantic],
+    summary="Get all consumers",
+    description="Get a list of all consumers available in the database.",
+)
 async def get_consumers() -> Any:
     c = await Consumer.all().prefetch_related("components")
     c = await c[0].components.all()
