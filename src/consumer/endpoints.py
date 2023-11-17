@@ -1,3 +1,4 @@
+import asyncio
 from typing import Any, List
 
 from fastapi import APIRouter, status
@@ -8,6 +9,7 @@ from src.consumer.models import (
     ConsumerIn_Pydantic,
     ConsumerOut_Pydantic,
 )
+from src.consumer.repository import ConsumerRepository
 
 router = APIRouter(tags=["consumer"])
 
@@ -32,11 +34,20 @@ async def create_consumer(consumer: ConsumerIn_Pydantic) -> Any:
     return await ConsumerOut_Pydantic.from_tortoise_orm(consumer_obj)
 
 
-@router.get(
-    "/{consumer_id}/component/", response_model=List[ConsumerComponentOut_Pydantic]
-)
+@router.get("/{consumer_id}/component/")
 async def get_components(consumer_id: int) -> Any:
-    ...
+    consumer = await ConsumerRepository().get(consumer_id)
+    components = await consumer.components
+
+    # TODO: Test what happens if the consumer has no component (Shouldn't be the case but test it)
+    components_out = await asyncio.gather(
+        *[
+            ConsumerComponentOut_Pydantic.from_tortoise_orm(component)
+            for component in components
+        ]
+    )
+
+    return components_out
 
 
 @router.get(
