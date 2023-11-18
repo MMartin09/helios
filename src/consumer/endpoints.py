@@ -1,7 +1,7 @@
 import asyncio
 from typing import Any, List
 
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, status
 
 from src.consumer.models import (
     Consumer,
@@ -11,7 +11,7 @@ from src.consumer.models import (
     ConsumerIn_Pydantic,
     ConsumerOut_Pydantic,
 )
-from src.consumer.repository import ConsumerRepository
+from src.consumer.repository import ComponentRepository, ConsumerRepository
 
 router = APIRouter(tags=["consumer"])
 
@@ -57,15 +57,7 @@ async def get_components(consumer_id: int) -> Any:
     response_model=ConsumerComponentOut_Pydantic,
 )
 async def get_component(consumer_id: int, component_id: int) -> Any:
-    consumer = await ConsumerRepository().get(consumer_id)
-    component = await consumer.components.filter(id=component_id).first()
-
-    if not component:
-        raise HTTPException(
-            status_code=404,
-            detail=f"Consumer {consumer.id} has no component with id={component_id}",
-        )
-
+    component = await ComponentRepository().get_by_consumer(consumer_id, component_id)
     return await ConsumerComponentOut_Pydantic.from_tortoise_orm(component)
 
 
