@@ -70,7 +70,7 @@ ConsumerIn_Pydantic = pydantic_model_creator(Consumer, name="ConsumerIn")
 ConsumerOut_Pydantic = pydantic_model_creator(Consumer, name="ConsumerOut")
 
 ConsumerComponentIn_Pydantic = pydantic_model_creator(
-    ConsumerComponent, name="ConsumerComponentIn", exclude={"id"}
+    ConsumerComponent, name="ConsumerComponentIn", exclude=("id",)
 )
 ConsumerComponentOut_Pydantic = pydantic_model_creator(
     ConsumerComponent, name="ConsumerComponentOut"

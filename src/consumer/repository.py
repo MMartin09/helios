@@ -29,5 +29,4 @@ class ConsumerRepository(BaseRepository[Consumer]):
 
     async def get(self, id: int) -> Consumer:
         consumer = await self._get(key="id", value=id)
-
         return consumer
