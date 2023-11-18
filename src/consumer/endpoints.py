@@ -32,14 +32,14 @@ async def get_consumers() -> Any:
     "/", response_model=ConsumerOut_Pydantic, status_code=status.HTTP_201_CREATED
 )
 async def create_consumer(consumer_in: ConsumerIn_Pydantic) -> Any:
+    # TODO: Should also be moved into the Repository.
     consumer_obj = await Consumer.create(**consumer_in.model_dump())
     return await ConsumerOut_Pydantic.from_tortoise_orm(consumer_obj)
 
 
 @router.get("/{consumer_id}/component/")
 async def get_components(consumer_id: int) -> Any:
-    consumer = await ConsumerRepository().get(consumer_id)
-    components = await consumer.components
+    components = await ComponentRepository().get_all_by_consumer(consumer_id)
 
     # TODO: Test what happens if the consumer has no component (Shouldn't be the case but test it)
     components_out = await asyncio.gather(

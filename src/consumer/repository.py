@@ -1,4 +1,4 @@
-from typing import Any, Generic, Type, TypeVar
+from typing import Any, Generic, List, Type, TypeVar
 
 from fastapi import HTTPException
 from tortoise import Model
@@ -36,6 +36,16 @@ class ComponentRepository:
     async def get_by_consumer(
         self, consumer_id: int, component_id: int
     ) -> ConsumerComponent:
+        """Get a single component of a selected consumer.
+
+        Args:
+            consumer_id: ID of the target consumer.
+            component_id: ID of the target component.
+
+        Returns:
+            The target ConsumerComponent.
+
+        """
         if not await Consumer.filter(id=consumer_id).exists():
             raise HTTPException(
                 status_code=404, detail=f"No consumer with id={consumer_id} found"
@@ -50,3 +60,23 @@ class ComponentRepository:
                 detail=f"Consumer {consumer_id} has no component with id={component_id}",
             )
         return component
+
+    async def get_all_by_consumer(self, consumer_id: int) -> List[ConsumerComponent]:
+        """Get all components of a selected consumer.
+
+        TODO: What will happen if the consumer has no components
+
+        Args:
+            consumer_id: ID of the target consumer.
+
+        Returns:
+            A list of all ConsumerComponents of the target consumer.
+
+        """
+        if not await Consumer.filter(id=consumer_id).exists():
+            raise HTTPException(
+                status_code=404, detail=f"No consumer with id={consumer_id} found"
+            )
+
+        components = await ConsumerComponent.filter(consumer=consumer_id).all()
+        return components
