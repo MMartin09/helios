@@ -11,7 +11,7 @@ from src.consumer.models import (
     ConsumerIn_Pydantic,
     ConsumerOut_Pydantic,
 )
-from src.consumer.repository import ComponentRepository, ConsumerRepository
+from src.core.dependencies import ConsumerComponentRepositoryDep, ConsumerRepositoryDep
 
 router = APIRouter(tags=["consumer"])
 
@@ -38,8 +38,10 @@ async def create_consumer(consumer_in: ConsumerIn_Pydantic) -> Any:
 
 
 @router.get("/{consumer_id}/component/")
-async def get_components(consumer_id: int) -> Any:
-    components = await ComponentRepository().get_all_by_consumer(consumer_id)
+async def get_components(
+    consumer_id: int, consumer_component_repository: ConsumerComponentRepositoryDep
+) -> Any:
+    components = await consumer_component_repository.get_all_by_consumer(consumer_id)
 
     # TODO: Test what happens if the consumer has no component (Shouldn't be the case but test it)
     components_out = await asyncio.gather(
@@ -56,8 +58,14 @@ async def get_components(consumer_id: int) -> Any:
     "/{consumer_id}/component/{component_id}",
     response_model=ConsumerComponentOut_Pydantic,
 )
-async def get_component(consumer_id: int, component_id: int) -> Any:
-    component = await ComponentRepository().get_by_consumer(consumer_id, component_id)
+async def get_component(
+    consumer_id: int,
+    component_id: int,
+    consumer_component_repository: ConsumerComponentRepositoryDep,
+) -> Any:
+    component = await consumer_component_repository.get_by_consumer(
+        consumer_id, component_id
+    )
     return await ConsumerComponentOut_Pydantic.from_tortoise_orm(component)
 
 
@@ -67,9 +75,12 @@ async def get_component(consumer_id: int, component_id: int) -> Any:
     status_code=status.HTTP_201_CREATED,
 )
 async def create_component(
-    consumer_id: int, component_in: ConsumerComponentIn_Pydantic
+    consumer_id: int,
+    component_in: ConsumerComponentIn_Pydantic,
+    consumer_repository: ConsumerRepositoryDep,
 ) -> Any:
-    consumer = await ConsumerRepository().get(consumer_id)
+    # TODO: Movie into repository
+    consumer = await consumer_repository.get(consumer_id)
 
     component_obj = await ConsumerComponent.create(
         consumer=consumer, **component_in.model_dump()

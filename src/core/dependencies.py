@@ -1,8 +1,11 @@
 from functools import lru_cache
+from typing import Annotated
 
+from fastapi import Depends
 from influxdb_client import InfluxDBClient
 from influxdb_client.client.write_api import SYNCHRONOUS, WriteApi
 
+from src.consumer.repository import ConsumerComponentRepository, ConsumerRepository
 from src.core.settings.app import get_app_settings
 from src.services.influxdb_logger import InfluxDBLogger
 
@@ -26,3 +29,17 @@ def get_influxdb_write_api() -> WriteApi:
 def get_influxdb_logger() -> InfluxDBLogger:
     app_settings = get_app_settings()
     return InfluxDBLogger(app_settings)
+
+
+def get_consumer_repository() -> ConsumerRepository:
+    return ConsumerRepository()
+
+
+def get_consumer_component_repository() -> ConsumerComponentRepository:
+    return ConsumerComponentRepository()
+
+
+ConsumerRepositoryDep = Annotated[ConsumerRepository, Depends(ConsumerRepository)]
+ConsumerComponentRepositoryDep = Annotated[
+    ConsumerComponentRepository, Depends(ConsumerComponentRepository)
+]

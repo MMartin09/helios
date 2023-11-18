@@ -32,7 +32,7 @@ class ConsumerRepository(BaseRepository[Consumer]):
         return consumer
 
 
-class ComponentRepository:
+class ConsumerComponentRepository:
     async def get_by_consumer(
         self, consumer_id: int, component_id: int
     ) -> ConsumerComponent:
