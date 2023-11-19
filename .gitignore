@@ -8,3 +8,11 @@
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
+
+# Ruff
+.ruff_cache
+
+## Misc
+
+# Environment files
+.env
