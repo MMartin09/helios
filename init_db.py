@@ -1,5 +1,6 @@
 import asyncio
 
+from influxdb_client import InfluxDBClient
 from tortoise import Tortoise
 
 from src import integrations
@@ -15,6 +16,20 @@ from src.core.settings.app import get_app_settings
 
 async def main():
     app_settings = get_app_settings()
+    client = InfluxDBClient(
+        url=app_settings.INFLUX_DB.URI,
+        token=app_settings.INFLUX_DB.TOKEN,
+        org=app_settings.INFLUX_DB.ORG,
+    )
+
+    buckets_api = client.buckets_api()
+    buckets = ["helios_powerflow", "helios_consumer_logs", "bella"]
+
+    for bucket in buckets:
+        if not buckets_api.find_bucket_by_name(bucket):
+            raise Exception(f"Bucket '{bucket}' does not exist!")
+
+    return
 
     models = [
         "src.automation_settings.models",

@@ -12,17 +12,23 @@ class InfluxDBLogger:
     """Service class to log data in InfluxDB.
 
     TODO: Implement error handling for the data logging
+    TODO: Move the buckets and bucket mapping out of the class
 
     Args:
         app_settings: AppSettings object to initialize the InfluxDBClient.
 
     """
 
-    BUCKET_MAPPING = {
+    BUCKETS = {
         "powerflow": "helios_powerflow",
-        "meter": "helios_powerflow",
-        "sma": "helios_powerflow",
-        "state_transition": "helios_consumer_logs",
+        "consumer_logs": "helios_consumer_logs",
+    }
+
+    BUCKET_MAPPING = {
+        "powerflow": BUCKETS["powerflow"],
+        "meter": BUCKETS["powerflow"],
+        "sma": BUCKETS["powerflow"],
+        "state_transition": BUCKETS["consumer_logs"],
     }
 
     def __init__(self, app_settings: AppSettings) -> None:
