@@ -32,7 +32,7 @@ RUN apt-get update \
         # deps for installing poetry
         curl \
         # deps for building python deps
-        build-essential \
+        build-essential
 
 # Install target version of Poetry
 ENV POETRY_VERSION=1.2.1
