@@ -1,7 +1,9 @@
+import logging
 from typing import Any, Dict
 
 import httpx
 from loguru import logger
+from tenacity import RetryError, after_log, retry, stop_after_attempt, wait_fixed
 
 from src.consumer.models import ConsumerComponent
 from src.integrations.switch.switch import BaseSwitch
@@ -27,8 +29,12 @@ class ShellySwitch(BaseSwitch):
         await self._switch_output(component, on=False)
 
     async def get_switch_status(self, component: ConsumerComponent) -> bool:
-        response = await self._send_request(component, method="Switch.GetStatus")
-        return response["output"]
+        try:
+            response = await self._send_request(component, method="Switch.GetStatus")
+            return response["output"]
+        except RetryError:
+            # TODO: What should happen here...
+            return False
 
     async def _switch_output(self, component: ConsumerComponent, on: bool) -> None:
         """Generic function to switch the output channel to the target state.
@@ -41,6 +47,11 @@ class ShellySwitch(BaseSwitch):
         await self._send_request(component, method="Switch.Set", params={"on": on})
 
     @staticmethod
+    @retry(
+        stop=stop_after_attempt(3),
+        wait=wait_fixed(5),
+        after=after_log(logger, logging.ERROR),
+    )
     async def _send_request(
         component: ConsumerComponent, method: str, params: Dict[str, Any] | None = None
     ) -> Dict[str, Any]:
@@ -59,10 +70,6 @@ class ShellySwitch(BaseSwitch):
         params = {"id": component.relais, **(params or {})}
 
         async with httpx.AsyncClient() as client:
-            try:
-                response = await client.get(url, params=params)
-                response.raise_for_status()
-
-                return response.json()
-            except httpx.HTTPError as err:
-                logger.error(err)
+            response = await client.get(url, params=params)
+            response.raise_for_status()
+            return response.json()
