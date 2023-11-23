@@ -10,6 +10,7 @@ from src.consumer.models import (
     ConsumerComponentOut_Pydantic,
     ConsumerIn_Pydantic,
     ConsumerOut_Pydantic,
+    ConsumerState,
 )
 from src.core.dependencies import ConsumerComponentRepositoryDep, ConsumerRepositoryDep
 
@@ -34,6 +35,7 @@ async def get_consumers() -> Any:
 async def create_consumer(consumer_in: ConsumerIn_Pydantic) -> Any:
     # TODO: Should also be moved into the Repository.
     consumer_obj = await Consumer.create(**consumer_in.model_dump())
+    await ConsumerState.create(consumer=consumer_obj)
     return await ConsumerOut_Pydantic.from_tortoise_orm(consumer_obj)
 
 
