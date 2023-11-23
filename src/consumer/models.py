@@ -66,7 +66,9 @@ class ConsumerState(Model):
 
 
 Consumer_Pydantic = pydantic_model_creator(Consumer, name="Consumer")
-ConsumerIn_Pydantic = pydantic_model_creator(Consumer, name="ConsumerIn")
+ConsumerIn_Pydantic = pydantic_model_creator(
+    Consumer, name="ConsumerIn", exclude=("id",)
+)
 ConsumerOut_Pydantic = pydantic_model_creator(Consumer, name="ConsumerOut")
 
 ConsumerComponentIn_Pydantic = pydantic_model_creator(
