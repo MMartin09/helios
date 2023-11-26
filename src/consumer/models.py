@@ -1,4 +1,4 @@
-from tortoise import Model, fields
+from tortoise import Model, fields, validators
 from tortoise.contrib.pydantic import pydantic_model_creator
 
 from src.core.definitions import ConsumerMode, ConsumerStatus, ConsumerType
@@ -25,14 +25,17 @@ class ConsumerComponent(Model):
 
     name = fields.CharField(max_length=32)
 
-    consumption = fields.SmallIntField(description="Consumption of the component [W]")
+    consumption = fields.SmallIntField(
+        validators=[validators.MinValueValidator(1)],
+        description="Consumption of the component [W]",
+    )
     running = fields.BooleanField(
         default=False,
         description="Describes whether this component is currently running ",
     )
 
     # TODO: This is Shelly specific move into separate table/model (e.g., switch -> sub model is shelly)
-    ip = fields.CharField(max_length=64)
+    ip = fields.CharField(max_length=64, validators=[validators.validate_ipv4_address])
     relais = fields.SmallIntField()
 
     consumer: fields.ForeignKeyRelation["Consumer"] = fields.ForeignKeyField(
