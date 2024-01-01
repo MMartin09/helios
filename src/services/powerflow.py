@@ -127,7 +127,10 @@ class StopConsumerService(ConsumerServiceBase):
             component for component in components if component.running
         ]
         # Target component is the running component with the highest consumption (or the only one if it is an SCC)
-        target_component = running_components[0]
+        target_component = running_components[
+            0
+        ]  # TODO: IndexError -> No component available
+        # But how? There is an error; Normally if the consumer is running there must be a running component
 
         consumer_state = await target_consumer.state.first()
 

@@ -11,6 +11,7 @@ from src.consumer.models import (
     ConsumerIn_Pydantic,
     ConsumerOut_Pydantic,
     ConsumerState,
+    ConsumerStateOut_Pydantic,
 )
 from src.core.dependencies import ConsumerComponentRepositoryDep, ConsumerRepositoryDep
 
@@ -37,6 +38,14 @@ async def create_consumer(consumer_in: ConsumerIn_Pydantic) -> Any:
     consumer_obj = await Consumer.create(**consumer_in.model_dump())
     await ConsumerState.create(consumer=consumer_obj)
     return await ConsumerOut_Pydantic.from_tortoise_orm(consumer_obj)
+
+
+@router.get("/{consumer_id}/state/", response_model=ConsumerStateOut_Pydantic)
+async def get_state(
+    consumer_id: int, consumer_repository: ConsumerRepositoryDep
+) -> Any:
+    state_obj = await consumer_repository.get_state(consumer_id)
+    return await ConsumerStateOut_Pydantic.from_tortoise_orm(state_obj)
 
 
 @router.get("/{consumer_id}/component/")

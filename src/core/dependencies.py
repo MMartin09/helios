@@ -2,7 +2,7 @@ from functools import lru_cache
 from typing import Annotated
 
 from fastapi import Depends
-from influxdb_client import InfluxDBClient
+from influxdb_client import InfluxDBClient, QueryApi
 from influxdb_client.client.write_api import SYNCHRONOUS, WriteApi
 
 from src.consumer.repository import ConsumerComponentRepository, ConsumerRepository
@@ -23,6 +23,11 @@ def get_influxdb_client() -> InfluxDBClient:
 @lru_cache(maxsize=1)
 def get_influxdb_write_api() -> WriteApi:
     return get_influxdb_client().write_api(write_options=SYNCHRONOUS)
+
+
+@lru_cache(maxsize=1)
+def get_influxdb_query_api() -> QueryApi:
+    return get_influxdb_client().query_api()
 
 
 @lru_cache(maxsize=1)

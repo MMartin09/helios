@@ -80,3 +80,7 @@ ConsumerComponentIn_Pydantic = pydantic_model_creator(
 ConsumerComponentOut_Pydantic = pydantic_model_creator(
     ConsumerComponent, name="ConsumerComponentOut"
 )
+
+ConsumerStateOut_Pydantic = pydantic_model_creator(
+    ConsumerState, name="ConsumerStateOut", exclude=("id",)
+)

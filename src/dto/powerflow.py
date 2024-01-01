@@ -13,7 +13,7 @@ class DataPowerflow(BaseModel):
 
 
 class DataMeter(BaseModel):
-    """Smartmeter Data structure."""
+    """Smart meter Data structure."""
 
     energy_plus: float
     energy_minus: float

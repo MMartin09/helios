@@ -36,9 +36,3 @@ async def meter(request: Request) -> Any:
     influxdb_logger.log_current_meter_data(current_data)
 
     return {"status": "ok"}
-
-
-@router.get("/temperature")
-async def temperature(switch: str, temperature: float) -> Any:
-    logger.debug(f"Current temperature data: {temperature}")
-    return {"status": "ok"}

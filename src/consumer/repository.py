@@ -3,7 +3,7 @@ from typing import Any, Generic, List, Type, TypeVar
 from fastapi import HTTPException
 from tortoise import Model
 
-from src.consumer.models import Consumer, ConsumerComponent
+from src.consumer.models import Consumer, ConsumerComponent, ConsumerState
 
 T = TypeVar("T", bound=Model)
 
@@ -30,6 +30,12 @@ class ConsumerRepository(BaseRepository[Consumer]):
     async def get(self, id: int) -> Consumer:
         consumer = await self._get(key="id", value=id)
         return consumer
+
+    async def get_state(self, id: int):
+        state_obj = await ConsumerState.filter(consumer=id).first()
+        if not state_obj:
+            ...
+        return state_obj
 
 
 class ConsumerComponentRepository:

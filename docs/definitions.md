@@ -9,7 +9,7 @@ Consumers are separated into two types depending on the number of components the
 - `SCC`: _Single-Component Consumer_ is a consumer with just one component.
 - `MCC`: _Multi-Component Consumer_ is a consumer with $[2, n]$ components.
 
-## Grid Mode
+## Grid-Mode
 
 The grid mode defines the direction of the powerflow and can have one of the following three states.
 

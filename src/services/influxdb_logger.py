@@ -32,6 +32,7 @@ class InfluxDBLogger:
     }
 
     def __init__(self, app_settings: AppSettings) -> None:
+        # TODO: Should be using the dependency.
         self._client = InfluxDBClient(
             url=app_settings.INFLUX_DB.URI,
             token=app_settings.INFLUX_DB.TOKEN,
