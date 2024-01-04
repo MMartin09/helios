@@ -45,6 +45,15 @@ async def get_state(
     consumer_id: int, consumer_repository: ConsumerRepositoryDep
 ) -> Any:
     state_obj = await consumer_repository.get_state(consumer_id)
+
+    # state = await ConsumerState.filter(consumer=consumer_id).first()
+    # if state:
+    #    state.current_consumption = 0
+    #    state.status = ConsumerStatus.STOPPED
+    #    await state.save()
+    # else:
+    #    print("Kein Zustand gefunden für den angegebenen Verbraucher.")
+
     return await ConsumerStateOut_Pydantic.from_tortoise_orm(state_obj)
 
 
